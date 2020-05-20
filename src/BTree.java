@@ -34,75 +34,14 @@ public class BTree<T extends Comparable<T>> {
     //Task 2.1
     public boolean insert(T value) {
     	// TODO: implement your code here
-        if (root == null) {
-            root = new Node<T>(null, maxKeySize, maxChildrenSize);
-            root.addKey(value);
-        } else {
-            Node<T> node = root;
-            while (node != null) {
-                if (node.numberOfChildren() == 0) {
-                    node.addKey(value);
-                    if (node.numberOfKeys() <= maxKeySize) {
-                        // A-OK
-                        break;
-                    }
-                    // Need to split up
-                    split(node);
-                    break;
-                }
-                // Navigate
-
-                // Lesser or equal
-                T lesser = node.getKey(0);
-                if (value.compareTo(lesser) <= 0) {
-                    node = node.getChild(0);
-                } else {
-                    // Greater
-                    int numberOfKeys = node.numberOfKeys();
-                    int last = numberOfKeys - 1;
-                    T greater = node.getKey(last);
-                    if (value.compareTo(greater) > 0) {
-                        node = node.getChild(numberOfKeys);
-                    } else {
-                        // Search internal nodes
-                        for (int i = 1; i < node.numberOfKeys(); i++) {
-                            T prev = node.getKey(i - 1);
-                            T next = node.getKey(i);
-                            if (value.compareTo(prev) > 0 && value.compareTo(next) <= 0) {
-                                node = node.getChild(i);
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                if (node.numberOfKeys() == maxKeySize) {
-                    split(node);
-                }
-
-
-            }
-        }
-
-        size++;
-
-        return true;
-		return false;
-    }
-
-    private findNextNode(T value) {
-
-    }
-
-    private void insertNonFull(T value) {
-
+        return false;
     }
 	
     public T delete(T value) {
     	// TODO: implement your code here
 		return null;
     }
-    
+
 	//Task 2.2
     public boolean insert2pass(T value) {
     	// TODO: implement your code here
