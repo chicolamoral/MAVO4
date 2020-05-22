@@ -4,7 +4,7 @@ import java.util.*;
 
 /**
  * @author      Yaniv Krol
- * @version     1.0
+ * @version     1.1
  */
 
 public class BTreeTester {
@@ -124,16 +124,20 @@ public class BTreeTester {
     private void invokeInsert(int toInsert) {
         try {
             insertMethod.invoke(btree, toInsert);
-        } catch (InvocationTargetException | IllegalAccessException e) {
+        } catch (IllegalAccessException e) {
             System.out.println("Wrong method name");
+        } catch (InvocationTargetException e) {
+            e.getTargetException().printStackTrace();
         }
     }
 
     private void invokeDelete(int toDelete) {
         try {
             deleteMethod.invoke(btree, toDelete);
-        } catch (InvocationTargetException | IllegalAccessException e) {
+        } catch (IllegalAccessException e) {
             System.out.println("Wrong method name");
+        } catch (InvocationTargetException e) {
+            e.getTargetException().printStackTrace();
         }
     }
 

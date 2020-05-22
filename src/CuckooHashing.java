@@ -13,6 +13,9 @@ public class CuckooHashing {
     private String[] array; // The array of elements
     private int currentSize; // The number of occupied cells
     private ArrayList<String> stash; //List of items that couldn't find a place
+
+    private Hashtable<String, Integer> undoHash = new Hashtable<>();
+    private Stack<Action> undoStack = new Stack<>();
     
     /**
      * Construct the hash table.
@@ -52,6 +55,8 @@ public class CuckooHashing {
     }
     
     private boolean insertHelper1(String x) {
+        InsertAction insertAct = new InsertAction();
+
         while (true) {
             int pos = -1;
             int kick_pos = -1;
@@ -77,32 +82,45 @@ public class CuckooHashing {
                     if (array[pos] == null) {
                         array[pos] = x;
                         currentSize++;
+                        insertAct.lastPositioned = pos;
+                        undoStack.push(insertAct);
+                        System.out.println(toString());
+                        System.out.println("-----------------------");
                         return true;
                     }
                     
                 } 
                 if(cycle)
                 	break;
-                if(pos==kick_pos)
+                if(pos==kick_pos || kick_pos==-1)
                 	kick_pos= myhash(x, 0);
-
+				else
+					kick_pos=pos;
                 // none of the spots are available, kick out item in kick_pos
                 String tmp = array[kick_pos];
                 array[kick_pos] = x;
                 x = tmp;
+                insertAct.kickedFrom.add(0, kick_pos);
+//                System.out.println(toString());
+//                System.out.println("*********************");
             }
             //insertion got into a cycle use overflow list
             this.stash.add(x);
+            undoStack.push(insertAct);
+            System.out.println(toString());
+            System.out.println("-----------------------");
             return true;
         }
     }
+
     private boolean isCycle(ArrayList<ArrayList<String>> cycle_tester,String x,int i) {
     	return cycle_tester.get(i).contains(x);
     }
 	
 	public void undo() {
-		// TODO: implement your code here
-	}
+        if (!undoStack.isEmpty())
+            undoStack.pop().undo();
+    }
 
     /**
      * @param x the item
@@ -184,6 +202,7 @@ public class CuckooHashing {
         	this.stash.remove(x);
         }
         currentSize--;
+        undoStack.clear();
         return true;
     }
 
@@ -246,6 +265,41 @@ public class CuckooHashing {
                 return false;
 
         return true;
+    }
+
+    // Action classes
+
+    // Insertion
+    private class InsertAction implements Action {
+
+        private List<Integer> kickedFrom = new LinkedList<>(); // List of indexes that an item was kicked from
+        private int lastPositioned = -1;
+
+        @Override
+        public void redo() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void undo() {
+            String item;
+            if (lastPositioned == -1) { // Inserted to stash
+                item = stash.remove(stash.size() - 1);
+            } else { // Inserted to array
+                item = array[lastPositioned];
+                array[lastPositioned] = null;
+                currentSize--;
+            }
+            while (!kickedFrom.isEmpty()) {
+                int pos = kickedFrom.remove(0);
+                String nextItem = array[pos];
+                array[pos] = item;
+                item = nextItem;
+            }
+            System.out.println("After undo:");
+            System.out.println(CuckooHashing.this.toString());
+        }
+
     }
 	
 }
