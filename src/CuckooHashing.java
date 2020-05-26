@@ -73,7 +73,7 @@ public class CuckooHashing {
             for (int count = 0; count <= MAXTRIES; count++) {
                 for (int i = 0; i < numHashFunctions; i++) {
                     pos = myhash(x, i);
-                    if(isCycle(cycle_tester,x,i))
+                    if(isCycle(cycle_tester,x,pos))
                     {
                     	cycle=true;
                     	break;
@@ -189,14 +189,13 @@ public class CuckooHashing {
     public boolean remove(String x) {
         int pos = findPos(x);
         if(pos==-1)
-        	return false;
+            return false;
         if (pos<this.capacity()) {
             array[pos] = null;
+            currentSize--;
         } else {
-        	this.stash.remove(x);
+            this.stash.remove(x);
         }
-        currentSize--;
-        undoStack.clear();
         return true;
     }
 
