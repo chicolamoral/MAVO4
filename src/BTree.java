@@ -4,20 +4,19 @@ import java.util.Comparator;
 @SuppressWarnings("unchecked")
 public class BTree<T extends Comparable<T>> {
 
-    private int minKeySize;
-    private int minChildrenSize;
-    private int maxKeySize;
-    private int maxChildrenSize;
+    // Default to 2-3 Tree
+    private int minKeySize = 1;
+    private int minChildrenSize = minKeySize + 1; // 2
+    private int maxKeySize = 2 * minKeySize; // 2
+    private int maxChildrenSize = maxKeySize + 1; // 3
 
     private Node<T> root = null;
     private int size = 0;
 
     /**
-     * Constructor for B-Tree which defaults to an order 2 B-Tree.
+     * Constructor for B-Tree which defaults to a 2-3 B-Tree.
      */
-    public BTree() {
-        this(2);
-    }
+    public BTree() { }
 
     /**
      * Constructor for B-Tree of order t. Order here means minimum
@@ -34,25 +33,123 @@ public class BTree<T extends Comparable<T>> {
     
     //Task 2.1
     public boolean insert(T value) {
-    	// TODO: implement your code here
-        return false;
+        if(root == null){
+            root = new Node<T>(null, maxKeySize, maxChildrenSize);
+            root.addKey(value);
+            return true;
+        }
+        else {
+            return insert(value, root);
+        }
     }
-	
+
+    //checks if a node has maximum number of keys, if so splits it and returns the parent node of the splitted parts
+    //otherwise return the node as is
+    private Node<T> checkLegitimacy(Node<T> node){
+        if (node.numberOfKeys() >= maxKeySize){
+            node = split2(node);
+        }
+        return node;
+    }
+
+    public boolean insert(T value, Node<T> R){
+        Node<T> thereal = R;
+        while (thereal != null) {
+            thereal = checkLegitimacy(thereal);
+            if (thereal.numberOfChildren() == 0) {
+                thereal.addKey(value);
+                break;
+            }
+            // Navigate
+
+            // Lesser or equal
+            T lesser = thereal.getKey(0);
+            if (value.compareTo(lesser) <= 0) {
+                thereal = thereal.getChild(0);
+                continue;
+            }
+
+            // Greater
+            int numberOfKeys = thereal.numberOfKeys();
+            int last = numberOfKeys - 1;
+            T greater = thereal.getKey(last);
+            if (value.compareTo(greater) > 0) {
+                thereal = thereal.getChild(numberOfKeys);
+                continue;
+            }
+
+            // Search internal nodes
+            for (int i = 1; i < thereal.numberOfKeys(); i++) {
+                T prev = thereal.getKey(i - 1);
+                T next = thereal.getKey(i);
+                if (value.compareTo(prev) > 0 && value.compareTo(next) <= 0) {
+                    thereal = thereal.getChild(i);
+                    break;
+                }
+            }
+        }
+        size++;
+        return true;
+    }
+
+
+    private Node<T> split2(Node<T> nodeToSplit) {
+        Node<T> node = nodeToSplit;
+        int numberOfKeys = node.numberOfKeys();
+        int medianIndex = numberOfKeys / 2;
+        T medianValue = node.getKey(medianIndex);
+
+        Node<T> left = new Node<T>(null, maxKeySize, maxChildrenSize);
+        for (int i = 0; i < medianIndex; i++) {
+            left.addKey(node.getKey(i));
+        }
+        if (node.numberOfChildren() > 0) {
+            for (int j = 0; j <= medianIndex; j++) {
+                Node<T> c = node.getChild(j);
+                left.addChild(c);
+            }
+        }
+
+        Node<T> right = new Node<T>(null, maxKeySize, maxChildrenSize);
+        for (int i = medianIndex + 1; i < numberOfKeys; i++) {
+            right.addKey(node.getKey(i));
+        }
+        if (node.numberOfChildren() > 0) {
+            for (int j = medianIndex + 1; j < node.numberOfChildren(); j++) {
+                Node<T> c = node.getChild(j);
+                right.addChild(c);
+            }
+        }
+        if (node.parent == null) {
+            // new root, height of tree is increased
+            Node<T> newRoot = new Node<T>(null, maxKeySize, maxChildrenSize);
+            newRoot.addKey(medianValue);
+            node.parent = newRoot;
+            root = newRoot;
+            node = root;
+            node.addChild(left);
+            node.addChild(right);
+            return newRoot;
+        } else {
+            // Move the median value up to the parent
+            Node<T> parent = node.parent;
+            parent.addKey(medianValue);
+            parent.removeChild(node);
+            parent.addChild(left);
+            parent.addChild(right);
+            return parent;
+        }
+    }
+
     public T delete(T value) {
         System.out.println("beforeAll");
         System.out.println(this.toString());
         return delete(value, root);
     }
 
-    /**
-     * Added by Yaniv
-     * Search the node and make sure the next node in the search has at least t elements
-     *
-     * @param node node to start search from (including)
-     * @param value value to delete.
-     * @return deleted value, null if not found.
-     */
     private T delete(T value, Node<T> node) {
+
+
         while (node != null) {
             Node<T> originalNode = node;
 
@@ -102,7 +199,7 @@ public class BTree<T extends Comparable<T>> {
                 if (next <= last) {
                     T nextValue = node.getKey(next);
                     if (currentValue.compareTo(value) < 0 && nextValue.compareTo(value) > 0) {
-                        if (next < node.numberOfChildren()) {
+                        if (next < node.numberOfChildren()) {//not sure
                             node = node.getChild(next);
                             if (node.numberOfKeys() == minKeySize) {
                                 node = this.combinedLTR(node) < 0 ? originalNode.getChild(next-1) : originalNode.getChild(next);
@@ -117,45 +214,31 @@ public class BTree<T extends Comparable<T>> {
         return null;
     }
 
-    /**
-     * Added by Yaniv
-     * Main logic of delete (decision making)
-     * Assume value is in the node and node has at least t keys
-     *
-     * @param node node to delete value from (assume value is in node).
-     *             Assume node has at least t keys
-     * @param value value to delete.
-     */
+    // Assume value is in the node and node has at least t keys
     private void deleteAfterFound(T value, Node<T> node) {
         if (node.numberOfChildren() == 0) { // Leaf
-            if (node.parent == null && node.numberOfKeys() == 1) // root and 1 key
+            if (node.parent == null && node.numberOfKeys() == 1) // root
                 root = null;
             else // leaf but not root
                 node.removeKey(value);
-        } else { // Internal node
+        } else {
             int index = node.indexOf(value);
-            Node<T> leftChild = node.getChild(index);
-            Node<T> rightChild = node.getChild(index+1);
-            if (leftChild.numberOfKeys() > minKeySize) {
-                // If leftChild has at least t elements, recursively delete the predecessor of value
-                // (which is in the subtree of leftChild) and put it in node instead of value.
-                Node<T> predNode = this.getGreatestNode(leftChild);
+            Node<T> prevNode = node.getChild(index);
+            Node<T> nextNode = node.getChild(index+1);
+            if (prevNode.numberOfKeys() > minKeySize) { // If y has at least t elements, recursively delete the predecessor of k (which is in the subtree of y) and put it in x instead of k.
+                Node<T> predNode = this.getGreatestNode(prevNode);
                 T predValue = predNode.getKey(predNode.numberOfKeys()-1);
-                delete(predValue, leftChild);
+                delete(predValue, prevNode);
                 node.removeKey(value);
                 node.addKey(predValue);
-            } else if (rightChild.numberOfKeys() > minKeySize) {
-                // If rightChild has at least t elements, recursively delete the value
-                // (which is in the subtree of rightChild) and put it in node instead of value.
-                Node<T> succNode = this.getSmallestNode(rightChild);
+            } else if (nextNode.numberOfKeys() > minKeySize) { // If z has at least t elements, recursively delete the successor of k (which is in the subtree of y) and put it in x instead of k.
+                Node<T> succNode = this.getSmallestNode(nextNode);
                 T succValue = succNode.getKey(0);
-                delete(succValue, rightChild);
+                delete(succValue, nextNode);
                 node.removeKey(value);
                 node.addKey(succValue);
-            } else {
-                // If both leftChild and rightChild have t−1 elements, merge them,
-                // and recursively delete value from the merged node.
-                delete(value, this.mergeForDelete(leftChild, rightChild));
+            } else { // If both y and z have t−1 elements, merge y and z, and recursively delete k from the merged node.
+                delete(value, this.mergeForDelete(node, index));
             }
         }
         System.out.println("deleteAfterFound");
@@ -165,59 +248,27 @@ public class BTree<T extends Comparable<T>> {
 
     /**
      * Added by Yaniv
-     * Code is reused from combined() method
+     * The node's key size is greater than maxKeySize, split down the middle.
      *
-     * @param rightChild child to merge with it's leftChild and their parent.
-     * @param leftChild child to merge with it's rightChild and their parent.
+     * @param parent for merge.
+     * @param keyOfMergeIndex index of key that will be merged
      * @return the merged node
      */
-    private Node<T> mergeForDelete(Node<T> leftChild, Node<T> rightChild) {
-        Node<T> parent = rightChild.parent;
-        T removeValue = leftChild.getKey(leftChild.numberOfKeys() - 1);
-        int prev = getIndexOfNextValue(parent, removeValue);
-        T parentValue = parent.removeKey(prev);
-        parent.removeChild(leftChild);
-        rightChild.addKey(parentValue);
-        for (int i = 0; i < leftChild.keysSize; i++) {
-            T v = leftChild.getKey(i);
-            rightChild.addKey(v);
+    private Node<T> mergeForDelete(Node<T> parent, int keyOfMergeIndex) {
+        Node<T> leftChild = parent.getChild(keyOfMergeIndex);
+        Node<T> rightChild = parent.getChild(keyOfMergeIndex+1);
+        leftChild.addKey(parent.getKey(keyOfMergeIndex));
+        for (int i = 0; i < rightChild.keysSize; i++) {
+            leftChild.addKey(rightChild.getKey(i));
         }
-        for (int i = 0; i < leftChild.childrenSize; i++) {
-            Node<T> c = leftChild.getChild(i);
-            rightChild.addChild(c);
+        for (int i = 0; i < rightChild.childrenSize; i++) {
+            leftChild.addChild(rightChild.getChild(i));
         }
-
-        if (parent.numberOfKeys() == 0) {
-            // parent no longer has keys, make this node the new root
-            // which decreases the height of the tree
-            rightChild.parent = null;
-            root = rightChild;
-        }
-        System.out.println("combinedLTR");
+        parent.removeKey(keyOfMergeIndex);
+        parent.removeChild(rightChild);
+        System.out.println("mergeForDelete");
         System.out.println(this.toString());
-        return rightChild;
-
-
-
-//        Node<T> leftChild = parent.getChild(keyOfMergeIndex);
-//        Node<T> rightChild = parent.getChild(keyOfMergeIndex+1);
-//        leftChild.addKey(parent.getKey(keyOfMergeIndex));
-//        for (int i = 0; i < rightChild.keysSize; i++) {
-//            leftChild.addKey(rightChild.getKey(i));
-//        }
-//        for (int i = 0; i < rightChild.childrenSize; i++) {
-//            leftChild.addChild(rightChild.getChild(i));
-//        }
-//        parent.removeKey(keyOfMergeIndex);
-//        parent.removeChild(rightChild);
-//        if (parent.numberOfKeys() == 0) {
-//            // parent is the root but now has no keys, make leftChild the new root
-//            root = leftChild;
-//            leftChild.parent = null;
-//        }
-//        System.out.println("mergeForDelete");
-//        System.out.println(this.toString());
-//        return leftChild;
+        return leftChild;
     }
 
     /**
@@ -239,10 +290,82 @@ public class BTree<T extends Comparable<T>> {
 
 	//Task 2.2
     public boolean insert2pass(T value) {
-    	// TODO: implement your code here
-		return false;
+        if(root == null){
+            root = new Node<T>(null, maxKeySize, maxChildrenSize);
+            root.addKey(value);
+            return true;
+        }
+        else {
+            return insert2pass(value, root);
+        }
     }
-    
+
+    private Node<T> ins2PassRetrack(Node<T> fixNode){
+        if (fixNode.parent.numberOfKeys() == maxKeySize){
+            ins2PassRetrack(fixNode.parent);
+            return split2(fixNode);
+        }
+        else {
+            return split2(fixNode);
+        }
+    }
+
+    public boolean insert2pass(T value, Node<T> R){
+        Node<T> thereal = R;
+        while (thereal != null) {
+            if (thereal.numberOfChildren() == 0) {
+                break;
+            }
+            // Navigate
+
+            // Lesser or equal
+            T lesser = thereal.getKey(0);
+            if (value.compareTo(lesser) <= 0) {
+                thereal = thereal.getChild(0);
+                continue;
+            }
+
+            // Greater
+            int numberOfKeys = thereal.numberOfKeys();
+            int last = numberOfKeys - 1;
+            T greater = thereal.getKey(last);
+            if (value.compareTo(greater) > 0) {
+                thereal = thereal.getChild(numberOfKeys);
+                continue;
+            }
+
+            // Search internal nodes
+            for (int i = 1; i < thereal.numberOfKeys(); i++) {
+                T prev = thereal.getKey(i - 1);
+                T next = thereal.getKey(i);
+                if (value.compareTo(prev) > 0 && value.compareTo(next) <= 0) {
+                    thereal = thereal.getChild(i);
+                    break;
+                }
+            }
+        }
+        if (thereal.numberOfKeys() == maxKeySize) {
+            if (thereal.parent == null) {
+                thereal = split2(thereal);
+            }
+            else {
+                thereal = ins2PassRetrack(thereal);
+            }
+            int indexChild = -1;
+            for(int i = 0; i < thereal.numberOfKeys() && indexChild == -1; i++) {
+                if (value.compareTo(thereal.getKey(i)) <= 0) {
+                    indexChild = i;
+                }
+            }
+            if (indexChild == -1) {
+                indexChild = thereal.numberOfKeys(); //went through all they keys and the new ket is larger
+            }
+            thereal = thereal.getChild(indexChild);
+        }
+        thereal.addKey(value);
+        size++;
+        return true;
+    }
     /**
      * {@inheritDoc}
      */
@@ -320,7 +443,6 @@ public class BTree<T extends Comparable<T>> {
                 left.addChild(c);
             }
         }
-
         Node<T> right = new Node<T>(null, maxKeySize, maxChildrenSize);
         for (int i = medianIndex + 1; i < numberOfKeys; i++) {
             right.addKey(node.getKey(i));
