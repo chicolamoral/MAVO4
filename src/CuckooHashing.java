@@ -73,7 +73,7 @@ public class CuckooHashing {
             for (int count = 0; count <= MAXTRIES; count++) {
                 for (int i = 0; i < numHashFunctions; i++) {
                     pos = myhash(x, i);
-                    if(isCycle(cycle_tester,x,i))
+                    if(isCycle(cycle_tester,x,pos))
                     {
                     	cycle=true;
                     	break;
@@ -84,8 +84,6 @@ public class CuckooHashing {
                         currentSize++;
                         insertAct.lastPositioned = pos;
                         undoStack.push(insertAct);
-                        System.out.println(toString());
-                        System.out.println("-----------------------");
                         return true;
                     }
                     
@@ -101,14 +99,10 @@ public class CuckooHashing {
                 array[kick_pos] = x;
                 x = tmp;
                 insertAct.kickedFrom.add(0, kick_pos);
-//                System.out.println(toString());
-//                System.out.println("*********************");
             }
             //insertion got into a cycle use overflow list
             this.stash.add(x);
             undoStack.push(insertAct);
-            System.out.println(toString());
-            System.out.println("-----------------------");
             return true;
         }
     }
@@ -195,14 +189,13 @@ public class CuckooHashing {
     public boolean remove(String x) {
         int pos = findPos(x);
         if(pos==-1)
-        	return false;
+            return false;
         if (pos<this.capacity()) {
             array[pos] = null;
+            currentSize--;
         } else {
-        	this.stash.remove(x);
+            this.stash.remove(x);
         }
-        currentSize--;
-        undoStack.clear();
         return true;
     }
 
@@ -272,8 +265,8 @@ public class CuckooHashing {
     // Insertion
     private class InsertAction implements Action {
 
-        private List<Integer> kickedFrom = new LinkedList<>(); // List of indexes that an item was kicked from
-        private int lastPositioned = -1;
+        private List<Integer> kickedFrom = new LinkedList<>(); // List of indexes that an item was kicked from, from last to first
+        private int lastPositioned = -1; // index of last insertion, stays -1 if inserted to stash
 
         @Override
         public void redo() {
@@ -290,14 +283,11 @@ public class CuckooHashing {
                 array[lastPositioned] = null;
                 currentSize--;
             }
-            while (!kickedFrom.isEmpty()) {
-                int pos = kickedFrom.remove(0);
-                String nextItem = array[pos];
-                array[pos] = item;
+            for (int index : kickedFrom) {
+                String nextItem = array[index];
+                array[index] = item;
                 item = nextItem;
             }
-            System.out.println("After undo:");
-            System.out.println(CuckooHashing.this.toString());
         }
 
     }
