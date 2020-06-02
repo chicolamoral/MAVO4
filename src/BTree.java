@@ -144,13 +144,10 @@ public class BTree<T extends Comparable<T>> {
 
 	
     public T delete(T value) {
-        System.out.println("beforeAll");
-        System.out.println(this.toString());
         return delete(value, root);
     }
 
     /**
-     * Added by Yaniv
      * Search the node and make sure the next node in the search has at least t elements
      *
      * @param node node to start search from (including)
@@ -223,7 +220,6 @@ public class BTree<T extends Comparable<T>> {
     }
 
     /**
-     * Added by Yaniv
      * Main logic of delete (decision making)
      * Assume value is in the node and node has at least t keys
      *
@@ -263,14 +259,10 @@ public class BTree<T extends Comparable<T>> {
                 delete(value, this.mergeForDelete(leftChild, rightChild));
             }
         }
-        System.out.println("deleteAfterFound");
-        System.out.println(this.toString());
-
     }
 
     /**
-     * Added by Yaniv
-     * Code is reused from combined() method
+     * Merge leftChild with rightChild
      *
      * @param rightChild child to merge with it's leftChild and their parent.
      * @param leftChild child to merge with it's rightChild and their parent.
@@ -298,36 +290,10 @@ public class BTree<T extends Comparable<T>> {
             rightChild.parent = null;
             root = rightChild;
         }
-        System.out.println("combinedLTR");
-        System.out.println(this.toString());
         return rightChild;
-
-
-
-//        Node<T> leftChild = parent.getChild(keyOfMergeIndex);
-//        Node<T> rightChild = parent.getChild(keyOfMergeIndex+1);
-//        leftChild.addKey(parent.getKey(keyOfMergeIndex));
-//        for (int i = 0; i < rightChild.keysSize; i++) {
-//            leftChild.addKey(rightChild.getKey(i));
-//        }
-//        for (int i = 0; i < rightChild.childrenSize; i++) {
-//            leftChild.addChild(rightChild.getChild(i));
-//        }
-//        parent.removeKey(keyOfMergeIndex);
-//        parent.removeChild(rightChild);
-//        if (parent.numberOfKeys() == 0) {
-//            // parent is the root but now has no keys, make leftChild the new root
-//            root = leftChild;
-//            leftChild.parent = null;
-//        }
-//        System.out.println("mergeForDelete");
-//        System.out.println(this.toString());
-//        return leftChild;
     }
 
     /**
-     *  Added by Yaniv
-     *
      * Get the smallest valued child from node.
      *
      * @param nodeToGet
@@ -823,8 +789,6 @@ public class BTree<T extends Comparable<T>> {
             if (leftNeighbor.numberOfChildren() > 0) {
                 node.addChild(leftNeighbor.removeChild(leftNeighbor.numberOfChildren() - 1));
             }
-            System.out.println("combinedLTR");
-            System.out.println(this.toString());
             return 0;
         } else {
             Node<T> rightNeighbor = null;
@@ -845,8 +809,6 @@ public class BTree<T extends Comparable<T>> {
                 if (rightNeighbor.numberOfChildren() > 0) {
                     node.addChild(rightNeighbor.removeChild(0));
                 }
-                System.out.println("combinedLTR");
-                System.out.println(this.toString());
                 return 0;
             } else if (leftNeighbor != null && parent.numberOfKeys() > 0) {
                 // Can't borrow from neighbors, try to combined with left neighbor
@@ -873,8 +835,6 @@ public class BTree<T extends Comparable<T>> {
                     node.parent = null;
                     root = node;
                 }
-                System.out.println("combinedLTR");
-                System.out.println(this.toString());
                 return -1;
             } else if (rightNeighbor != null && parent.numberOfKeys() > 0) {
                 // Can't borrow from neighbors, try to combined with right neighbor
@@ -901,8 +861,6 @@ public class BTree<T extends Comparable<T>> {
                     node.parent = null;
                     root = node;
                 }
-                System.out.println("combinedLTR");
-                System.out.println(this.toString());
                 return 1;
             }
         }

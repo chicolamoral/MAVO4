@@ -98,7 +98,7 @@ public class CuckooHashing {
                 String tmp = array[kick_pos];
                 array[kick_pos] = x;
                 x = tmp;
-                insertAct.kickedFrom.add(0, kick_pos);
+                insertAct.kickedFrom.push(kick_pos);
             }
             //insertion got into a cycle use overflow list
             this.stash.add(x);
@@ -265,7 +265,7 @@ public class CuckooHashing {
     // Insertion
     private class InsertAction implements Action {
 
-        private List<Integer> kickedFrom = new LinkedList<>(); // List of indexes that an item was kicked from, from last to first
+        private Stack<Integer> kickedFrom = new Stack<>(); // Stack of indexes that an item was kicked from
         private int lastPositioned = -1; // index of last insertion, stays -1 if inserted to stash
 
         @Override
@@ -283,7 +283,8 @@ public class CuckooHashing {
                 array[lastPositioned] = null;
                 currentSize--;
             }
-            for (int index : kickedFrom) {
+            while (!kickedFrom.isEmpty()){
+                int index = kickedFrom.pop();
                 String nextItem = array[index];
                 array[index] = item;
                 item = nextItem;

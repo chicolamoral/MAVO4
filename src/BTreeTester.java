@@ -15,7 +15,7 @@ public class BTreeTester {
         int order = 2;
         int firstNumber = 1;
         int lastNumber = 10;
-        boolean repetitionsAllowed = true;
+        boolean repetitionsAllowed = false;
         String insertMethod = "insert2pass"; // "insert", "insert2pass"
         String deleteMethod = "delete"; // "delete"
 
