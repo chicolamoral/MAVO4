@@ -37,6 +37,7 @@ public class BTree<T extends Comparable<T>> {
         if(root == null){
             root = new Node<T>(null, maxKeySize, maxChildrenSize);
             root.addKey(value);
+            size++;
             return true;
         }
         else {
@@ -57,8 +58,9 @@ public class BTree<T extends Comparable<T>> {
     public boolean insert(T value, Node<T> R){
         Node<T> thereal = R;
         while (thereal != null) {
-            thereal = checkLegitimacy(thereal);
-            if (thereal.numberOfChildren() == 0) {
+            thereal = checkLegitimacy(thereal);//before "entering" entering a node, if number of keys is maximal we
+            //split the node and receive parent node, otherwise returns the node without change
+            if (thereal.numberOfChildren() == 0) {//checks for leaf
                 thereal.addKey(value);
                 break;
             }
@@ -94,12 +96,12 @@ public class BTree<T extends Comparable<T>> {
         return true;
     }
 
-    private Node<T> split2(Node<T> nodeToSplit) {
+    private Node<T> split2(Node<T> nodeToSplit) {//differentiate from split as it returns parent node at end of process
         Node<T> node = nodeToSplit;
         int numberOfKeys = node.numberOfKeys();
         int medianIndex = numberOfKeys / 2;
         T medianValue = node.getKey(medianIndex);
-
+        //left side of split
         Node<T> left = new Node<T>(null, maxKeySize, maxChildrenSize);
         for (int i = 0; i < medianIndex; i++) {
             left.addKey(node.getKey(i));
@@ -110,7 +112,7 @@ public class BTree<T extends Comparable<T>> {
                 left.addChild(c);
             }
         }
-
+        //right side of split
         Node<T> right = new Node<T>(null, maxKeySize, maxChildrenSize);
         for (int i = medianIndex + 1; i < numberOfKeys; i++) {
             right.addKey(node.getKey(i));
@@ -310,16 +312,17 @@ public class BTree<T extends Comparable<T>> {
 
 	//Task 2.2
     public boolean insert2pass(T value) {
-        if(root == null){
+        if(root == null){//tree is empty
             root = new Node<T>(null, maxKeySize, maxChildrenSize);
             root.addKey(value);
+            size++;
             return true;
         }
         else {
             return insert2pass(value, root);
         }
     }
-
+    //receives a node that has max keys, if parent node has max keys is well, recursively split parent. otherwise split self.
     private Node<T> ins2PassRetrack(Node<T> fixNode){
         if(fixNode.parent == null){
             return split2(fixNode);
@@ -367,13 +370,14 @@ public class BTree<T extends Comparable<T>> {
                 }
             }
         }
-        if (thereal.numberOfKeys() == maxKeySize) {
-            if (thereal.parent == null) {
+        if (thereal.numberOfKeys() == maxKeySize) {//checks if any alterations are required
+            if (thereal.parent == null) {//leaf is root as well
                 thereal = split2(thereal);
             }
-            else {
+            else {//recursively split all nodes that are required to be split
                 thereal = ins2PassRetrack(thereal);
             }
+            //final search since we received back a parent node. need to get the correct leaf.
             int indexChild = -1;
             for(int i = 0; i < thereal.numberOfKeys() && indexChild == -1; i++) {
                 if (value.compareTo(thereal.getKey(i)) <= 0) {
@@ -385,7 +389,7 @@ public class BTree<T extends Comparable<T>> {
             }
             thereal = thereal.getChild(indexChild);
         }
-        thereal.addKey(value);
+        thereal.addKey(value);//adds value to the leaf
         size++;
         return true;
     }
