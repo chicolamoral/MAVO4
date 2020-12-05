@@ -25,7 +25,6 @@ public class StringHashMethods implements HashMethods
 
         for( int i = 0; i < input.length( ); i++ )
             hashVal = multiplier * hashVal + input.charAt( i );
-//                hashVal += (input.charAt(i) - 'a') + index;
 
         return hashVal;
     }

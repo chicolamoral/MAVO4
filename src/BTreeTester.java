@@ -16,8 +16,8 @@ public class BTreeTester {
         int firstNumber = 1;
         int lastNumber = 10;
         boolean repetitionsAllowed = false;
-        String insertMethod = "insert2pass"; // "insert"11, "insert2pass"
-        String deleteMethod = "remove"; // "delete"
+        String insertMethod = "insert2pass"; // "insert", "insert2pass"
+        String deleteMethod = "delete"; // "delete"
 
         BTreeTester btreeTest = new BTreeTester(order,firstNumber, lastNumber, repetitionsAllowed, insertMethod, deleteMethod);
         btreeTest.startUI();
@@ -91,9 +91,7 @@ public class BTreeTester {
                 case (111): // Insert random multiple times
                     System.out.print("How many times? ");
                     int times = reader.nextInt();
-                    for (int i=0; i<times; i++) {
-                        if (availableToInsert.isEmpty())
-                            break;
+                    for (int i=0; i<times && !availableToInsert.isEmpty(); i++) {
                         insertRandom();
                     }
                     break;
@@ -106,9 +104,7 @@ public class BTreeTester {
                 case (222): // delete random multiple times
                     System.out.print("How many times? ");
                     times = reader.nextInt();
-                    for (int i=0; i<times; i++) {
-                        if (inserted.isEmpty())
-                            break;
+                    for (int i=0; i<times && !inserted.isEmpty(); i++) {
                         deleteRandom();
                     }
                     break;
@@ -119,6 +115,7 @@ public class BTreeTester {
 
     private void printTree() {
         System.out.println(btree.toString());
+        System.out.println("valid: " + btree.validate());
     }
 
     private void invokeInsert(int toInsert) {
